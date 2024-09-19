@@ -4,6 +4,8 @@
 // Cursus : Université Grenoble Alpes - UFRIM²AG - Master 1 - Informatique
 //------------------------------------------------------------------------------
 
+
+
 use std::alloc::{GlobalAlloc, Layout};
 use std::ptr;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -11,6 +13,9 @@ use std::sync::Once;
 use std::ffi::c_void;
 use std::mem::MaybeUninit;
 use std::ptr::copy_nonoverlapping;
+
+use mem::*;
+use mem_space::*;
 
 // For thread-local reentrancy prevention
 thread_local! {
