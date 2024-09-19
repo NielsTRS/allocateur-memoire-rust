@@ -6,15 +6,39 @@
 
 use std::ptr;
 use std::assert;
+use lazy_static::lazy_static;
+use std::sync::Mutex;
+
+use crate::mem_space;
+
+pub struct MemFreeBlock {
+    next: Option<Box<MemFreeBlock>>,  // Pointer to the next free block (linked list)
+    size: usize,                      // Size of the free block
+}
+
+pub type MemFitFunction = fn(first_free_block: &MemFreeBlock, wanted_size: usize) -> Option<&MemFreeBlock>;
+
+lazy_static! {
+    static ref FB: Mutex<MemFreeBlock> = Mutex::new(MemFreeBlock {
+        next: None,
+        size: mem_space::MEMORY_SIZE,
+    });
+}
 
 //-------------------------------------------------------------
 // mem_init
 //-------------------------------------------------------------
 /// Initialize the memory allocator.
 /// If already initialized, it will re-init.
+/// // You can reinitialize it here if needed
 pub fn mem_init() {
-    // TODO: implement
-    assert!(false, "NOT IMPLEMENTED !");
+    let mut fb = FB.lock().unwrap();
+    fb.next = None;
+    fb.size = mem_space::MEMORY_SIZE;
+}
+
+pub fn get_fb() -> std::sync::MutexGuard<'static, MemFreeBlock> {
+    FB.lock().unwrap()
 }
 
 //-------------------------------------------------------------
@@ -65,12 +89,6 @@ pub fn mem_set_fit_handler(mff: fn(*mut MemFreeBlock, usize) -> *mut MemFreeBloc
 //-------------------------------------------------------------
 // Allocation strategies
 //-------------------------------------------------------------
-pub struct MemFreeBlock {
-    // Assuming this structure has fields to hold necessary information.
-    // Define fields based on what you need
-    size: usize,
-    // More fields based on allocator requirements
-}
 
 //-------------------------------------------------------------
 // First Fit Strategy
