@@ -1,0 +1,30 @@
+* Testé sur mandelbrot
+
+* Vous pouvez écrire vos programmes de test et utiliser la biliothèque fournie
+pour simuler les allocations mémoire.
+Pour cela :
+
+    0) Dans vos programmes, commencer dans le main par appeler la fonction
+    
+        get_the_opts(argc,argv); //voir dans memshell.c
+        
+        afin de parser les arguments de la ligne de commande
+        
+    1) Définir la variable LD_LIBRARY_PATH
+        
+        Si la librairie libsharedsimalloc.so est dans le répertoire local faire
+    
+        export LD_LIBRARY_PATH=.
+    
+    2) Compiler vos programmes en suivant l'exemple suivant
+   
+        gcc -c memshell.c -W -Wall -pedantic -g -std=c99 -DDEBUG -fPIC
+        gcc -o memshell.run memshell.o libsharedsimalloc.so
+
+** ATTENTION **
+Le simulateur ne fait que calculer les adresses d'allocation
+mais ne fait pas d'allocations effectives i.e. vous ne pouvez pas
+utiliser les adresses retournées (comme vous devriez pouvoir faire avec votre implémentation).
+
+
+
