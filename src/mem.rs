@@ -4,26 +4,25 @@
 // Cursus : Université Grenoble Alpes - UFRIM²AG - Master 1 - Informatique
 //------------------------------------------------------------------------------
 
-use std::ptr;
-use std::assert;
 use lazy_static::lazy_static;
+use std::assert;
+use std::ptr;
 use std::sync::Mutex;
-
-use crate::mem_space;
+use crate::mem_space::*;
 
 pub struct MemFreeBlock {
-    next: Option<Box<MemFreeBlock>>,  // Pointer to the next free block (linked list)
-    size: usize,                      // Size of the free block
+    next: Option<Box<MemFreeBlock>>, // Pointer to the next free block (linked list)
+    size: usize,                     // Size of the free block
 }
 
 pub struct MemMetaBlock {
-    size: usize,                      // Size of the block
+    size: usize, // Size of the block
 }
 
 lazy_static! {
     static ref FB: Mutex<MemFreeBlock> = Mutex::new(MemFreeBlock {
         next: None,
-        size: mem_space::MEMORY_SIZE,
+        size: 0,
     });
 }
 
@@ -40,7 +39,7 @@ pub fn get_fb() -> std::sync::MutexGuard<'static, MemFreeBlock> {
 pub fn mem_init() {
     let mut fb = get_fb();
     fb.next = None;
-    fb.size = mem_space::MEMORY_SIZE;
+    fb.size = mem_space_get_size();
     mem_set_fit_handler(mem_first_fit);
 }
 
@@ -77,8 +76,14 @@ pub fn mem_free(zone: *mut u8) {
 // mem_show
 //-------------------------------------------------------------
 pub fn mem_show(print: fn(*mut u8, usize, bool)) {
-    // TODO: implement
-    assert!(false, "NOT IMPLEMENTED !");
+    let fb = get_fb();
+    let mut current_block = Some(&*fb);
+
+    while let Some(block) = current_block {
+        let block_addr = block as *const MemFreeBlock as *mut u8;
+        print(block_addr, block.size, true);
+        current_block = block.next.as_deref();
+    }
 }
 
 //-------------------------------------------------------------
