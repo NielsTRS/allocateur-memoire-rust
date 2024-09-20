@@ -16,13 +16,19 @@ pub struct MemFreeBlock {
     size: usize,                      // Size of the free block
 }
 
-pub type MemFitFunction = fn(first_free_block: &MemFreeBlock, wanted_size: usize) -> Option<&MemFreeBlock>;
+pub struct MemMetaBlock {
+    size: usize,                      // Size of the block
+}
 
 lazy_static! {
     static ref FB: Mutex<MemFreeBlock> = Mutex::new(MemFreeBlock {
         next: None,
         size: mem_space::MEMORY_SIZE,
     });
+}
+
+pub fn get_fb() -> std::sync::MutexGuard<'static, MemFreeBlock> {
+    FB.lock().unwrap()
 }
 
 //-------------------------------------------------------------
@@ -32,13 +38,10 @@ lazy_static! {
 /// If already initialized, it will re-init.
 /// // You can reinitialize it here if needed
 pub fn mem_init() {
-    let mut fb = FB.lock().unwrap();
+    let mut fb = get_fb();
     fb.next = None;
     fb.size = mem_space::MEMORY_SIZE;
-}
-
-pub fn get_fb() -> std::sync::MutexGuard<'static, MemFreeBlock> {
-    FB.lock().unwrap()
+    mem_set_fit_handler(mem_first_fit);
 }
 
 //-------------------------------------------------------------
