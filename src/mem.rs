@@ -28,12 +28,13 @@ impl MemFreeBlock {
             next: None,
         }
     }
+
     //-------------------------------------------------------------
     // Iterator (parcours) over the content of the allocator
     // mem_show
     //-------------------------------------------------------------
-    pub fn mem_show(print: fn(*mut u8, usize, bool)) {
-        let mut current_block = Some(&*fb);
+    pub fn mem_show(&self, print: fn(*mut u8, usize, bool)) {
+        let mut current_block = Some(self);
 
         while let Some(block) = current_block {
             let block_addr = block as *const MemFreeBlock as *mut u8;
@@ -41,6 +42,7 @@ impl MemFreeBlock {
             current_block = block.next.as_deref();
         }
     }
+
     // Get a reference to the next block
     pub fn get_next(&self) -> Option<&Box<MemFreeBlock>> {
         self.next.as_ref() // Return a reference to the next block

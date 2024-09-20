@@ -6,7 +6,6 @@
 
 pub mod mem;
 pub mod mem_space;
-pub mod allocator;
 
 use std::io::{self, Write};
 use std::ptr;
@@ -60,7 +59,7 @@ fn main() {
     let mut nb_alloc = 0;
 
     aide();
-    mem_init();
+    let mut fb = MemFreeBlock::mem_init();
 
     loop {
         print!("? ");
@@ -73,7 +72,7 @@ fn main() {
         match commande {
             'a' => {
                 let taille: usize = chars.as_str().trim().parse().unwrap();
-                let ptr = mem_alloc(taille);
+                let ptr = MemMetaBlock::mem_alloc(taille);
                 allocations[nb_alloc] = ptr;
                 nb_alloc += 1;
                 if ptr.is_null() {
@@ -86,7 +85,7 @@ fn main() {
             'l' => {
                 let offset: isize = chars.as_str().trim().parse().unwrap();
                 unsafe {
-                    mem_free(mem_space_get_addr().offset(offset));
+                    MemMetaBlock::mem_free(mem_space_get_addr().offset(offset));
                 }
                 println!("Memoire liberee");
             }
@@ -94,19 +93,19 @@ fn main() {
                 let offset: usize = chars.as_str().trim().parse().unwrap();
                 assert!(offset < MAX_ALLOCATIONS);
                 unsafe {
-                    mem_free(allocations[offset - 1]);
+                    MemMetaBlock::mem_free(allocations[offset - 1]);
                 }
                 allocations[offset - 1] = ptr::null_mut();
                 println!("Memoire liberee");
             }
             'i' => {
-                mem_show(afficher_zone_libre);
+                fb.mem_show(afficher_zone_libre);
             }
             'o' => {
-                mem_show(afficher_zone_occupee);
+                fb.mem_show(afficher_zone_occupee);
             }
             'M' => {
-                mem_show(afficher_zone);
+                fb.mem_show(afficher_zone);
             }
             'm' => {
                 print!("[ ");
