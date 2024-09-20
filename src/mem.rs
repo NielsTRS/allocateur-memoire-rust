@@ -8,6 +8,7 @@ use std::assert;
 use std::ptr;
 use crate::mem_space::*;
 
+static mut FIT_HANDLER: Option<fn(*mut MemFreeBlock, usize) -> *mut MemFreeBlock> = None;
 
 pub struct MemFreeBlock {
     pub next: Option<Box<MemFreeBlock>>, // Pointer to the next free block (linked list)
@@ -15,6 +16,7 @@ pub struct MemFreeBlock {
 }
 
 impl MemFreeBlock {
+
     //-------------------------------------------------------------
     // mem_init
     //-------------------------------------------------------------
@@ -67,7 +69,9 @@ impl MemFreeBlock {
     //-------------------------------------------------------------
     pub fn mem_set_fit_handler(mff: fn(*mut MemFreeBlock, usize) -> *mut MemFreeBlock) {
         // TODO: implement
-        assert!(false, "NOT IMPLEMENTED !");
+        unsafe {
+            FIT_HANDLER = Some(mff);
+        }
     }
     //-------------------------------------------------------------
     // Allocation strategies
