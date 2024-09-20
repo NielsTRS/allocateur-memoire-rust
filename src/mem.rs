@@ -4,31 +4,10 @@
 // Cursus : Université Grenoble Alpes - UFRIM²AG - Master 1 - Informatique
 //------------------------------------------------------------------------------
 
-use lazy_static::lazy_static;
 use std::assert;
 use std::ptr;
-use std::sync::Mutex;
 use crate::mem_space::*;
-
-pub struct MemFreeBlock {
-    next: Option<Box<MemFreeBlock>>, // Pointer to the next free block (linked list)
-    size: usize,                     // Size of the free block
-}
-
-pub struct MemMetaBlock {
-    size: usize, // Size of the block
-}
-
-lazy_static! {
-    static ref FB: Mutex<MemFreeBlock> = Mutex::new(MemFreeBlock {
-        next: None,
-        size: 0,
-    });
-}
-
-pub fn get_fb() -> std::sync::MutexGuard<'static, MemFreeBlock> {
-    FB.lock().unwrap()
-}
+use crate::allocator;
 
 //-------------------------------------------------------------
 // mem_init
@@ -37,9 +16,6 @@ pub fn get_fb() -> std::sync::MutexGuard<'static, MemFreeBlock> {
 /// If already initialized, it will re-init.
 /// // You can reinitialize it here if needed
 pub fn mem_init() {
-    let mut fb = get_fb();
-    fb.next = None;
-    fb.size = mem_space_get_size();
     mem_set_fit_handler(mem_first_fit);
 }
 

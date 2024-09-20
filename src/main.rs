@@ -6,6 +6,7 @@
 
 pub mod mem;
 pub mod mem_space;
+pub mod allocator;
 
 use std::io::{self, Write};
 use std::ptr;
