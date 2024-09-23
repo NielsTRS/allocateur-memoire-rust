@@ -5,6 +5,7 @@
 //------------------------------------------------------------------------------
 
 pub mod mem;
+//pub mod mem2;
 pub mod mem_space;
 
 use std::io::{self, Write};
