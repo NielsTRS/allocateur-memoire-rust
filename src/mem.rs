@@ -1,7 +1,7 @@
 use std::{assert, ptr};
 use crate::mem_space::*;
 
-static mut FIT_HANDLER: Option<fn(&MemFreeBlock, usize) -> Option<&MemFreeBlock>> = None;
+static mut FIT_HANDLER: Option<fn(&mut MemFreeBlock, usize) -> Option<&mut MemFreeBlock>> = None;
 
 pub struct MemFreeBlock {
     pub next: Option<Box<MemFreeBlock>>, // Pointer to the next free block (linked list)
@@ -35,19 +35,19 @@ impl MemFreeBlock {
         let end_memory = unsafe { ptr_memory.add(size_mem) };
 
         let mut free_b = Self::get_first_block();
+        if let Some(mut free_block) = free_b.as_deref_mut(){
 
-        while ptr_current != end_memory {
-            if let Some(free_block) = free_b {
-                if ptr_current == (free_block as *const MemFreeBlock as *mut u8) {
-                    print(ptr_current, free_block.get_size(), true);
-                    ptr_current = ptr_current.wrapping_add(free_block.size);
-                    free_b = free_block.next.as_deref_mut(); // Safe dereferencing
-                } else {
-                    let busy_zone = unsafe { &*(ptr_current as *mut MemMetaBlock) };
-                    print(ptr_current, busy_zone.size, false);
-                    ptr_current = ptr_current.wrapping_add(busy_zone.size);
+            while ptr_current != end_memory {
+                    if ptr_current == (free_block as *const MemFreeBlock as *mut u8) {
+                        print(ptr_current, free_block.get_size(), true);
+                        ptr_current = ptr_current.wrapping_add(free_block.size);
+                        free_block = free_block.get_next().unwrap();// Safe dereferencing
+                    } else {
+                        let busy_zone = unsafe { &*(ptr_current as *mut MemMetaBlock) };
+                        print(ptr_current, busy_zone.size, false);
+                        ptr_current = ptr_current.wrapping_add(busy_zone.size);
+                    }
                 }
-            }
         }
     }
 
@@ -60,8 +60,8 @@ impl MemFreeBlock {
     }
 
     // Get the next block
-    pub fn get_next(&self) -> Option<&MemFreeBlock> {
-        self.next.as_deref()
+    pub fn get_next(&mut self) -> Option<&mut MemFreeBlock> {
+        self.next.as_deref_mut()
     }
 
     // Get the size of the block
@@ -82,7 +82,7 @@ impl MemFreeBlock {
     //-------------------------------------------------------------
     // mem_fit
     //-------------------------------------------------------------
-    pub fn mem_set_fit_handler(mff: fn(&MemFreeBlock, usize) -> Option<&MemFreeBlock>) {
+    pub fn mem_set_fit_handler(mff: fn(&mut MemFreeBlock, usize) -> Option<&mut MemFreeBlock>) {
         unsafe {
             FIT_HANDLER = Some(mff);
         }
@@ -91,17 +91,22 @@ impl MemFreeBlock {
     //-------------------------------------------------------------
     // First Fit Strategy
     //-------------------------------------------------------------
-    pub fn mem_first_fit(first_free_block: &MemFreeBlock, wanted_size: usize) -> Option<&MemFreeBlock> {
-        let mut fb = first_free_block;
-
-        while fb.get_size() < wanted_size + 8 {
+    pub fn mem_first_fit(first_free_block: &mut MemFreeBlock, wanted_size: usize) -> Option<&mut MemFreeBlock> {
+        let mut fb: &mut MemFreeBlock = first_free_block;
+    
+        // Iterate through the free blocks
+        loop {
+            // Check if the current free block is large enough
+            if fb.get_size() >= wanted_size + std::mem::size_of::<MemMetaBlock>() {
+                return Some(fb);
+            }
+            
+            // Move to the next block
             match fb.get_next() {
                 None => return None, // No suitable block found
                 Some(next_block) => fb = next_block, // Move to the next block
             }
         }
-
-        Some(fb)
     }
 
     //-------------------------------------------------------------
