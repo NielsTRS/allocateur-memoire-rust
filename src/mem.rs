@@ -41,7 +41,11 @@ impl MemFreeBlock {
                     if ptr_current == (free_block as *const MemFreeBlock as *mut u8) {
                         print(ptr_current, free_block.get_size(), true);
                         ptr_current = ptr_current.wrapping_add(free_block.size);
-                        free_block = free_block.get_next().unwrap();// Safe dereferencing
+                        if let Some(next_block) = free_block.get_next() {
+                            free_block = next_block;
+                        } else {
+                            break;
+                        }
                     } else {
                         let busy_zone = unsafe { &*(ptr_current as *mut MemMetaBlock) };
                         print(ptr_current, busy_zone.size, false);
