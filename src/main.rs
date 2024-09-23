@@ -92,9 +92,7 @@ fn main() {
             'f' => {
                 let offset: usize = chars.as_str().trim().parse().unwrap();
                 assert!(offset < MAX_ALLOCATIONS);
-                unsafe {
-                    MemMetaBlock::mem_free(allocations[offset - 1]);
-                }
+                MemMetaBlock::mem_free(allocations[offset - 1]);
                 allocations[offset - 1] = ptr::null_mut();
                 println!("Memoire liberee");
             }
