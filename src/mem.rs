@@ -23,25 +23,43 @@ impl MemFreeBlock {
     /// Initialize the memory allocator.
     /// If already initialized, it will re-init.
     /// // You can reinitialize it here if needed
-    pub fn mem_init() -> MemFreeBlock {
-        Self::mem_set_fit_handler(Self::mem_first_fit);
-        MemFreeBlock {
-            size: mem_space_get_size(),
-            next: None,
+    pub fn mem_init(){
+        let size_memory = mem_space_get_size();
+        let first_memory_block = mem_space_get_addr() as *mut MemFreeBlock;
+
+        unsafe {
+            (*first_memory_block).next = None;
+            (*first_memory_block).size = size_memory;
         }
+
+        Self::mem_set_fit_handler(Self::mem_first_fit);
     }
 
     //-------------------------------------------------------------
     // Iterator (parcours) over the content of the allocator
     // mem_show
     //-------------------------------------------------------------
-    pub fn mem_show(&self, print: fn(*mut u8, usize, bool)) {
-        let mut current_block = Some(self);
+    pub fn mem_show(print: fn(*mut u8, usize, bool)) {
+        let ptr_memory = mem_space_get_addr() as *mut u8;
+        let mut ptr_current = ptr_memory;
+        let size_mem = mem_space_get_size();
+        let end_memory = unsafe { ptr_memory.add(size_mem) };
 
-        while let Some(block) = current_block {
-            let block_addr = block as *const MemFreeBlock as *mut u8;
-            print(block_addr, block.size, true);
-            current_block = block.next.as_deref();
+        let mut free_b = unsafe { &*(ptr_memory as *mut MemFreeBlock) };
+
+        while ptr_current != end_memory {
+            if ptr_current == (free_b as *const MemFreeBlock as *mut u8) {
+                print(ptr_current, free_b.size, true);
+                ptr_current = unsafe { ptr_current.add(free_b.size) };
+                free_b = match &free_b.next {
+                    Some(next_block) => next_block,
+                    None => break,
+                };
+            } else {
+                let busy_zone = unsafe { &*(ptr_current as *mut MemMetaBlock) };
+                print(ptr_current, busy_zone.size, false);
+                ptr_current = unsafe { ptr_current.add(busy_zone.size) };
+            }
         }
     }
 

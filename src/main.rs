@@ -59,7 +59,7 @@ fn main() {
     let mut nb_alloc = 0;
 
     aide();
-    let mut fb = MemFreeBlock::mem_init();
+    MemFreeBlock::mem_init();
 
     loop {
         print!("? ");
@@ -99,13 +99,13 @@ fn main() {
                 println!("Memoire liberee");
             }
             'i' => {
-                fb.mem_show(afficher_zone_libre);
+                MemFreeBlock::mem_show(afficher_zone_libre);
             }
             'o' => {
-                fb.mem_show(afficher_zone_occupee);
+                MemFreeBlock::mem_show(afficher_zone_occupee);
             }
             'M' => {
-                fb.mem_show(afficher_zone);
+                MemFreeBlock::mem_show(afficher_zone);
             }
             'm' => {
                 print!("[ ");
