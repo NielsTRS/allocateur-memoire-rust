@@ -39,7 +39,7 @@ impl MemFreeBlock {
         while ptr_current != end_memory {
             if let Some(free_block) = free_b {
                 if ptr_current == (free_block as *const MemFreeBlock as *mut u8) {
-                    print(ptr_current, free_block.size, true);
+                    print(ptr_current, free_block.get_size(), true);
                     ptr_current = ptr_current.wrapping_add(free_block.size);
                     free_b = free_block.next.as_deref_mut(); // Safe dereferencing
                 } else {
