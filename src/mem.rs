@@ -92,6 +92,50 @@ impl MemFreeBlock {
         }
     }
 
+     // Replace the target block in the free list with a new block
+     pub fn replace(target_block: &mut MemFreeBlock, new_block: MemFreeBlock) {
+        let first_block = Self::get_first_block();
+
+        // Early exit if the free list is empty
+        if first_block.is_none() {
+            return;
+        }
+
+        let mut current_block = first_block.unwrap();
+        let mut prev_block: Option<&mut MemFreeBlock> = None;
+
+        // Traverse the free list to find the target block
+        loop {
+            // Check if the current block is the target block
+            if ptr::eq(current_block, target_block) {
+                let mut new_block_box = Box::new(new_block); // Wrap new block in a Box
+
+                // Set the next pointer of the new block to the target's next
+                new_block_box.next = current_block.next.take();
+
+                if let Some(prev) = prev_block {
+                    // If there is a previous block, update its next to point to the new block
+                    prev.next = Some(new_block_box);
+                } else {
+                    // If replacing the first block, directly modify the first block pointer in memory
+                    let first_memory_block = mem_space_get_addr() as *mut MemFreeBlock;
+                    unsafe {
+                        *first_memory_block = *new_block_box;
+                    }
+                }
+                return; // Target block found and replaced, exit the function
+            }
+
+            // Move to the next block in the list
+            prev_block = Some(unsafe { &mut *(current_block as *const _ as *mut MemFreeBlock) });
+            if let Some(next_block) = current_block.get_next() {
+                current_block = next_block;
+            } else {
+                break;
+            }
+        }
+    }
+
     //-------------------------------------------------------------
     // mem_show -- show free and occupied memory
     //-------------------------------------------------------------
@@ -182,38 +226,38 @@ impl MemMetaBlock {
             if let Some(free_block) = MemFreeBlock::get_first_block() {
                 // Use the fit strategy to find a suitable block
                 if let Some(suitable_block) = handler(free_block, size + std::mem::size_of::<MemMetaBlock>()) {
-                    // Save the pointer to the suitable block before deleting it
+                    // Save the pointer to the suitable block before potential modification
                     let suitable_block_ptr = suitable_block as *const MemFreeBlock as *mut MemFreeBlock;
-
-                    // Delete the block from the free list
-                    MemFreeBlock::delete(suitable_block);
 
                     // Calculate the total size needed for the allocation (including meta)
                     let total_alloc_size = size + std::mem::size_of::<MemMetaBlock>();
 
                     // Check if we need to split the free block
-                    unsafe {
-                        if (*suitable_block_ptr).get_size() > total_alloc_size {
-                            // Create a new free block from the remaining memory after allocation
-                            let new_free_block_ptr = (suitable_block_ptr as *mut u8).add(total_alloc_size) as *mut MemFreeBlock;
-                            let new_free_block = &mut *new_free_block_ptr;
+                    let leftover_size = unsafe { (*suitable_block_ptr).get_size() } - total_alloc_size;
 
-                            // Update the new free block
-                            new_free_block.set_size((*suitable_block_ptr).get_size() - total_alloc_size);
-                            if let Some(next_block) = Some(*new_free_block.next.take().unwrap()) {
-                                new_free_block.set_next(next_block);
-                            } else {
-                                new_free_block.next = None;
-                            }
+                    if leftover_size > std::mem::size_of::<MemFreeBlock>() {
+                        // Create a new free block from the remaining memory after allocation
+                        let new_free_block_ptr = unsafe {
+                            (suitable_block_ptr as *mut u8).add(total_alloc_size) as *mut MemFreeBlock
+                        };
 
-                            // Add the new free block to the free list
-                            let first_block = MemFreeBlock::get_first_block();
-                            if let Some(first_free) = first_block {
-                                new_free_block.set_next(*first_free.next.take().unwrap());
-                            }
+                        // Initialize the new free block
+                        unsafe {
+                            (*new_free_block_ptr).set_size(leftover_size);
+                            (*new_free_block_ptr).next = (*suitable_block_ptr).next.take();
                         }
 
-                        // Set the allocated block size (without splitting) in the meta block
+                        // Replace the suitable block with the new free block in the free list
+                        unsafe {
+                            MemFreeBlock::replace(suitable_block, std::ptr::read(new_free_block_ptr));
+                        }
+                    } else {
+                        // If no split is needed, delete the suitable block from the free list
+                        MemFreeBlock::delete(suitable_block);
+                    }
+
+                    // Set the allocated block size (without splitting) in the meta block
+                    unsafe {
                         (*suitable_block_ptr).set_size(size);
                     }
 
