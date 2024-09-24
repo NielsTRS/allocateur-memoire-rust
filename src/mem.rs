@@ -122,7 +122,7 @@ impl MemFreeBlock {
             }
 
             // Check if the old block is the first in the list
-            if let Some(mut first_block) = MemFreeBlock::get_first_block() {
+            if let Some(first_block) = MemFreeBlock::get_first_block() {
                 if first_block == old_block {
                     // If the old block is the first block, replace it with the new one
                     MemFreeBlock::set_first_block(new_block);
@@ -149,7 +149,7 @@ impl MemFreeBlock {
     pub fn delete(block_to_delete: *mut MemFreeBlock) {
         unsafe {
             // Check if the block to delete is the first block in the list
-            if let Some(mut first_block) = MemFreeBlock::get_first_block() {
+            if let Some(first_block) = MemFreeBlock::get_first_block() {
                 if first_block == block_to_delete {
                     // If the block to delete is the first block, update the head of the list
                     MemFreeBlock::set_first_block((*block_to_delete).next.unwrap_or(ptr::null_mut()));
@@ -252,7 +252,7 @@ impl MemMetaBlock {
                     let meta_block_ptr = (suitable_block_ptr as *mut u8) as *mut MemMetaBlock;
     
                     unsafe {
-                        (*meta_block_ptr).size = size+8; // Set the size in the metadata block
+                        (*meta_block_ptr).size = total_alloc_size; // Set the size in the metadata block
                     }
     
                     // Return the pointer to the allocated memory (just after the metadata)
