@@ -185,16 +185,50 @@ impl MemFreeBlock {
         None
     }
 
-    // Best Fit Strategy (Not implemented)
-    pub fn mem_best_fit(_first_free_block: &mut MemFreeBlock, _wanted_size: usize) -> Option<&mut MemFreeBlock> {
-        assert!(false, "NOT IMPLEMENTED !");
-        None
+    // Best Fit Strategy
+    pub fn mem_best_fit(first_block: *mut MemFreeBlock, size: usize) -> Option<*mut MemFreeBlock> {
+        let mut current_block = first_block;
+        let mut best_fit_block: Option<*mut MemFreeBlock> = None;
+        let mut smallest_fit_size = usize::MAX;
+
+        // Iterate over free blocks to find the best fit block
+        while !current_block.is_null() {
+            unsafe {
+                let block = &*current_block;
+                let block_size = block.get_size();
+                if block_size >= size && block_size < smallest_fit_size {
+                    best_fit_block = Some(current_block);
+                    smallest_fit_size = block_size;
+                }
+                current_block = block.get_next().unwrap_or(ptr::null_mut());
+            }
+        }
+
+        // Return the best fit block found, or None if no suitable block was found
+        best_fit_block
     }
 
-    // Worst Fit Strategy (Not implemented)
-    pub fn mem_worst_fit(_first_free_block: &mut MemFreeBlock, _wanted_size: usize) -> Option<&mut MemFreeBlock> {
-        assert!(false, "NOT IMPLEMENTED !");
-        None
+    // Worst Fit Strategy
+    pub fn mem_worst_fit(first_block: *mut MemFreeBlock, size: usize) -> Option<*mut MemFreeBlock> {
+        let mut current_block = first_block;
+        let mut worst_fit_block: Option<*mut MemFreeBlock> = None;
+        let mut largest_fit_size = 0;
+
+        // Iterate over free blocks to find the worst fit block
+        while !current_block.is_null() {
+            unsafe {
+                let block = &*current_block;
+                let block_size = block.get_size();
+                if block_size >= size && block_size > largest_fit_size {
+                    worst_fit_block = Some(current_block);
+                    largest_fit_size = block_size;
+                }
+                current_block = block.get_next().unwrap_or(ptr::null_mut());
+            }
+        }
+
+        // Return the worst fit block found, or None if no suitable block was found
+        worst_fit_block
     }
 
     // Insert a new block to the list
