@@ -287,8 +287,15 @@ impl MemFreeBlock {
 }
 
 impl MemMetaBlock {
+    // Get the next modulo 8 size
+    pub fn get_next_modulo_size(size: usize) -> usize {
+        size + (8 - (size % 8))
+    }
+
     // Allocate memory
-    pub fn mem_alloc(size: usize) -> *mut u8 {
+    pub fn mem_alloc(mut size: usize) -> *mut u8 {
+        size = MemMetaBlock::get_next_modulo_size(size);
+
         // Check if there is a fit handler set
         if let Some(handler) = unsafe { FIT_HANDLER } {
             // Get the first free block
