@@ -90,7 +90,7 @@ impl MemFreeBlock {
                     print(ptr_current, busy_zone.size, false);
                     // Move the current pointer forward by the size of the busy block
                     ptr_current = unsafe {
-                        ptr_current.add(busy_zone.size)
+                        ptr_current.add(busy_zone.size+8)
                     };
                 }
             } else {
@@ -263,24 +263,25 @@ impl MemFreeBlock {
     }
 
     // Fusion method to merge adjacent free blocks
-    pub fn fusion(block: *mut MemFreeBlock) {
+    pub fn fusion() {
         unsafe {
-            let mut current_block = block;
-            // Iterate through the free list and merge adjacent blocks
-            while let Some(next_block) = (*current_block).get_next() {
-                let current_block_end = (current_block as *mut u8).add((*current_block).get_size());
-                // Check if the next block is adjacent
-                if current_block_end == next_block as *mut u8 {
-                    // Merge the current block with the next block
-                    let merged_size = (*current_block).get_size() + (*next_block).get_size();
-                    (*current_block).set_size(merged_size);
-                    // Remove the next block from the list
-                    (*current_block).next = (*next_block).get_next();
-                } else {
-                    // Move to the next block if they are not adjacent
-                    current_block = next_block;
+            if let Some(mut current_block) = MemFreeBlock::get_first_block() {
+                // Iterate through the free list and merge adjacent blocks
+                while let Some(next_block) = (*current_block).get_next() {
+                    let current_block_end = (current_block as *mut u8).add((*current_block).get_size());
+                    // Check if the next block is adjacent
+                    if current_block_end == next_block as *mut u8 {
+                        // Merge the current block with the next block
+                        let merged_size = (*current_block).get_size() + (*next_block).get_size();
+                        (*current_block).set_size(merged_size);
+                        // Remove the next block from the list
+                        (*current_block).next = (*next_block).get_next();
+                    } else {
+                        // Move to the next block if they are not adjacent
+                        current_block = next_block;
+                    }
                 }
-            }
+            } else{}
         }
     }
 }
@@ -319,7 +320,7 @@ impl MemMetaBlock {
                     // Create and set the size of the allocated MemMetaBlock
                     let meta_block_ptr = (suitable_block_ptr as *mut u8) as *mut MemMetaBlock;
                     unsafe {
-                        (*meta_block_ptr).size = total_alloc_size; // Set the size in the metadata block
+                        (*meta_block_ptr).size = size; // Set the size in the metadata block
                     }
 
                     // Return the pointer to the allocated memory (just after the metadata)
@@ -354,7 +355,7 @@ impl MemMetaBlock {
             // Insert the free block back into the free list
             MemFreeBlock::insert(free_block_ptr);
             // After inserting, merge free list if possible
-            MemFreeBlock::fusion(free_block_ptr);
+            MemFreeBlock::fusion();
         }
     }
 
