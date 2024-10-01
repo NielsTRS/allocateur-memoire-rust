@@ -4,7 +4,7 @@ use crate::mem_space::*;
 // Global static variables
 type FitHandler = fn(*mut MemFreeBlock, usize) -> Option<*mut MemFreeBlock>;
 static mut FIT_HANDLER: Option<FitHandler> = None;
-static MODULO: usize = 8;
+pub static MODULO: usize = 8;
 
 static mut FREE_LIST_HEAD: Option<*mut MemFreeBlock> = None;
 
