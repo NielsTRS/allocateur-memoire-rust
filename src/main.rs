@@ -32,22 +32,22 @@ fn aide() {
     eprintln!("q         :   quitter ce programme\n");
 }
 
-fn afficher_zone(adresse: *mut u8, taille: usize, free: bool) {
+fn afficher_zone(adresse: usize, taille: usize, free: bool) {
     println!(
-        "Zone {}, Adresse : {:p}, Taille : {}",
+        "Zone {}, Adresse : {}, Taille : {}",
         if free { "libre" } else { "occupee" },
         adresse,
         taille
     );
 }
 
-fn afficher_zone_libre(adresse: *mut u8, taille: usize, free: bool) {
+fn afficher_zone_libre(adresse: usize, taille: usize, free: bool) {
     if free {
         afficher_zone(adresse, taille, true);
     }
 }
 
-fn afficher_zone_occupee(adresse: *mut u8, taille: usize, free: bool) {
+fn afficher_zone_occupee(adresse: usize, taille: usize, free: bool) {
     if !free {
         afficher_zone(adresse, taille, false);
     }
