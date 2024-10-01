@@ -20,7 +20,11 @@ pub struct MemFreeBlock {
 
 // Get the next modulo 8 size
 pub fn get_modulo(size: usize) -> usize {
-    size + (MODULO - (size % MODULO))
+    if size % MODULO != 0 {
+		size + (MODULO - (size % MODULO))
+    } else {
+        size
+    }
 }
 
 impl MemFreeBlock {
