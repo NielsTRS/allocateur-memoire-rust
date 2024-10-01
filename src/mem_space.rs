@@ -4,6 +4,8 @@
 // Cursus : Université Grenoble Alpes - UFRIM²AG - Master 1 - Informatique
 //------------------------------------------------------------------------------
 
+use crate::mem::get_modulo;
+
 pub const MEMORY_SIZE: usize = 4096; // You can change the memory size here.
 
 static mut MEMORY: [u8; MEMORY_SIZE] = [0; MEMORY_SIZE];
@@ -13,7 +15,7 @@ static mut MEMORY: [u8; MEMORY_SIZE] = [0; MEMORY_SIZE];
 //-------------------------------------------------------------
 /// Return the address of the memory space.
 pub fn mem_space_get_addr() -> *mut u8 {
-    unsafe { MEMORY.as_mut_ptr() } // Access to static mutable memory requires 'unsafe' in Rust
+    unsafe { get_modulo(MEMORY.as_mut_ptr() as usize) as *mut u8} // Access to static mutable memory requires 'unsafe' in Rust
 }
 
 //-------------------------------------------------------------

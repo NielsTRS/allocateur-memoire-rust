@@ -4,6 +4,7 @@ use crate::mem_space::*;
 // Global static variables
 type FitHandler = fn(*mut MemFreeBlock, usize) -> Option<*mut MemFreeBlock>;
 static mut FIT_HANDLER: Option<FitHandler> = None;
+static MODULO: usize = 8;
 
 static mut FREE_LIST_HEAD: Option<*mut MemFreeBlock> = None;
 
@@ -15,6 +16,11 @@ pub struct MemMetaBlock {
 pub struct MemFreeBlock {
     pub size: usize,
     pub next: Option<*mut MemFreeBlock>,
+}
+
+// Get the next modulo 8 size
+pub fn get_modulo(size: usize) -> usize {
+    size + (MODULO - (size % MODULO))
 }
 
 impl MemFreeBlock {
@@ -33,8 +39,9 @@ impl MemFreeBlock {
 
     pub fn mem_init() {
         let size_memory = mem_space_get_size(); // Get the starting address of the memory
-        let first_memory_block_ptr = mem_space_get_addr() as *mut MemFreeBlock; // Create a MemFreeBlock from the adress
-        
+        // Get the starting address and size of the memory space
+        let first_memory_block_ptr = mem_space_get_addr() as *mut MemFreeBlock;
+
         // Safely initialize the first memory block
         unsafe {
             // Create a new free block at the start of the memory space
@@ -63,8 +70,9 @@ impl MemFreeBlock {
 
     // Show the free and occupied memory blocks
     pub fn mem_show(print: fn(*mut u8, usize, bool)) {
-        // Get the starting address and size of the memory space
+        // Get the starting address and size of the memory space + the modulo
         let ptr_memory = mem_space_get_addr() as *mut u8;
+
         let mut ptr_current = ptr_memory;  // Pointer to the current memory block
         let size_mem = mem_space_get_size();  // Total size of the memory space
         let end_memory = unsafe { ptr_memory.add(size_mem) };  // End of the memory space address
@@ -90,7 +98,7 @@ impl MemFreeBlock {
                     print(ptr_current, busy_zone.size, false);
                     // Move the current pointer forward by the size of the busy block
                     ptr_current = unsafe {
-                        ptr_current.add(busy_zone.size+8)
+                        ptr_current.add(busy_zone.size+ std::mem::size_of::<MemMetaBlock>())
                     };
                 }
             } else {
@@ -287,14 +295,10 @@ impl MemFreeBlock {
 }
 
 impl MemMetaBlock {
-    // Get the next modulo 8 size
-    pub fn get_next_modulo_size(size: usize) -> usize {
-        size + (8 - (size % 8))
-    }
 
     // Allocate memory
     pub fn mem_alloc(mut size: usize) -> *mut u8 {
-        size = MemMetaBlock::get_next_modulo_size(size);
+        size = get_modulo(size);
 
         // Check if there is a fit handler set
         if let Some(handler) = unsafe { FIT_HANDLER } {
