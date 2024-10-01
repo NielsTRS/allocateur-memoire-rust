@@ -1,4 +1,4 @@
-use std::{assert, ptr};
+use std::ptr;
 use crate::mem_space::*;
 
 // Global static variables
@@ -351,14 +351,14 @@ impl MemMetaBlock {
     // Free a previously allocated memory block
     pub fn mem_free(zone: *mut u8) {
         unsafe {
-            // Get the block from the adress given
+            // Get the block from the address given
             let meta_block_ptr = (zone as *mut u8).sub(std::mem::size_of::<MemMetaBlock>()) as *mut MemMetaBlock;
             // Get the size of the block (including metadata)
             let block_size = (*meta_block_ptr).size;
             // Convert the meta block to a free block
             let free_block_ptr = meta_block_ptr as *mut MemFreeBlock;
             // Set the size of the free block
-            (*free_block_ptr).set_size(block_size);
+            (*free_block_ptr).set_size(block_size + std::mem::size_of::<MemMetaBlock>());
             // Insert the free block back into the free list
             MemFreeBlock::insert(free_block_ptr);
             // After inserting, merge free list if possible
