@@ -15,7 +15,6 @@ use std::assert;
 use mem::*;
 use mem_space::*;
 
-const TAILLE_BUFFER: usize = 128;
 const MAX_ALLOCATIONS: usize = 128;
 
 fn aide() {
