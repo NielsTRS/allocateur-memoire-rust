@@ -79,6 +79,8 @@ impl MemFreeBlock {
 
     // Show the free and occupied memory blocks
     pub fn mem_show(print: fn(usize, usize, bool)) {
+        Self::print_free_list();
+
         let mem_ptr = mem_space_get_addr();
     
         // Get the starting address and size of the memory space
@@ -308,6 +310,23 @@ impl MemFreeBlock {
             }
         }
     }
+
+    pub fn print_free_list() {
+        let mem_ptr = mem_space_get_addr();
+        let mut current = Self::get_first_block();
+        println!("Free List:");
+        while let Some(current_block) = current {
+            unsafe {
+                println!(
+                    "Adresse: {:?}, Taille: {}",
+                    (current_block as *mut u8).offset_from(mem_ptr) as usize,
+                    (*current_block).size
+                );
+                current = (*current_block).next;
+            }
+        }
+        println!("\n");
+    }
 }
 
 impl MemMetaBlock {
@@ -382,7 +401,6 @@ impl MemMetaBlock {
         let free_block_ptr = meta_block_ptr as *mut MemFreeBlock;
         unsafe {
             (*free_block_ptr).size = block_size;
-            (*free_block_ptr).next = None;
         }
 
         // Add the block back to the free list

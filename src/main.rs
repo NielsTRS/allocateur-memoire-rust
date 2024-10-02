@@ -123,9 +123,5 @@ fn main() {
                 eprintln!("Commande inconnue !");
             }
         }
-
-        // Empty the remaining input from the buffer
-        buffer.clear();
-        io::stdin().read_line(&mut buffer).unwrap();
     }
 }
