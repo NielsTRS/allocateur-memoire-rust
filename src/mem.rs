@@ -1,5 +1,5 @@
 use crate::mem_space::*;
-use std::ptr;
+use std::{ops::Add, ptr};
 
 // Global static variables
 type FitHandler = fn(*mut MemFreeBlock, usize) -> Option<*mut MemFreeBlock>;
@@ -97,7 +97,7 @@ impl MemFreeBlock {
                 } else {
                     // If the current block is allocated (MemMetaBlock)
                     let busy_zone = unsafe { &*(ptr_current as *mut MemMetaBlock) };
-                    print(unsafe { ptr_current.offset_from(ptr_memory) as usize }, busy_zone.size, false);
+                    print(unsafe {ptr_current.offset_from(ptr_memory) as usize + std::mem::size_of::<MemMetaBlock>()}, busy_zone.size, false);
                     // Move the current pointer forward by the size of the busy block
                     ptr_current = unsafe {
                         ptr_current.add(busy_zone.size + std::mem::size_of::<MemMetaBlock>())
@@ -108,7 +108,7 @@ impl MemFreeBlock {
                 let busy_zone = unsafe { &*(ptr_current as *mut MemMetaBlock) };
                 print(unsafe { ptr_current.offset_from(ptr_memory) as usize }, busy_zone.size, false);
                 // Move the pointer forward to the next block
-                ptr_current = unsafe { ptr_current.add(busy_zone.size) };
+                ptr_current = unsafe { ptr_current.add(busy_zone.size + std::mem::size_of::<MemMetaBlock>()) };
             }
         }
     }
@@ -291,7 +291,6 @@ impl MemFreeBlock {
                         current_block = next_block;
                     }
                 }
-            } else {
             }
         }
     }
@@ -364,16 +363,14 @@ impl MemMetaBlock {
     pub fn mem_free(zone: *mut u8) {
         unsafe {
             if zone.is_null() {
-                eprintln!("Error free : NULL pointer");
-                return;
+                panic!("Error free : NULL pointer");
             }
 
             // Handle case where zone is out of bounds
             let mem_start = mem_space_get_addr();
             let mem_end = mem_start.add(mem_space_get_size());
             if zone < mem_start || zone >= mem_end {
-                eprintln!("Error free : pointer out of space memory");
-                return;
+                panic!("Error free : pointer out of space memory");
             }
 
             // Get the block from the address given
@@ -387,12 +384,11 @@ impl MemMetaBlock {
             let free_block_ptr = meta_block_ptr as *mut MemFreeBlock;
             // Initialize the free block at the specified address
             (*free_block_ptr).size = block_size;
-            (*free_block_ptr).next = None;
 
             // Insert the free block back into the free list
             MemFreeBlock::insert(free_block_ptr);
             // After inserting, merge free list if possible
-            //MemFreeBlock::fusion();
+            MemFreeBlock::fusion();
         }
     }
 
