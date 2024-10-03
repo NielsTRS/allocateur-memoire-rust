@@ -43,13 +43,10 @@ impl MemFreeBlock {
         // Get the starting address and size of the memory space
         let mem_start = mem_space_get_addr();
         let mem_size = mem_space_get_size();
-    
-        // Reserve space for the free list at the beginning of the memory
-        let free_list_size = std::mem::size_of::<MemFreeBlock>();
 
         // Calculate the size of the first free block
-        let first_free_block_size = mem_size - free_list_size;
-        let first_free_block_ptr = unsafe { (mem_start as *mut u8).add(free_list_size) as *mut MemFreeBlock };
+        let first_free_block_size = mem_size;
+        let first_free_block_ptr = mem_start as *mut MemFreeBlock ;
     
         // Initialize the first free block
         unsafe {
@@ -84,7 +81,7 @@ impl MemFreeBlock {
         let mem_ptr = mem_space_get_addr();
     
         // Get the starting address and size of the memory space
-        let mem_start = unsafe { mem_space_get_addr().add(std::mem::size_of::<MemFreeBlock>()) };
+        let mem_start = mem_space_get_addr();
         let mem_size = mem_space_get_size();
     
         let mut ptr_current = mem_start; // Pointer to the current memory block, starting after the free list
@@ -348,7 +345,7 @@ impl MemMetaBlock {
                     // Calculate the leftover size after allocation
                     let leftover_size = suitable_block_size - total_alloc_size;
 
-                    if leftover_size > std::mem::size_of::<MemMetaBlock>() {
+                    if leftover_size >= std::mem::size_of::<MemFreeBlock>() {
                         // Pointer arithmetic to calculate the address of the new free block after the new allocated block
                         let new_free_block_ptr = unsafe {
                             (suitable_block_ptr as *mut u8).add(total_alloc_size)
