@@ -403,6 +403,13 @@ impl MemMetaBlock {
         if ptr.is_null() {
             return;
         }
+        
+        // Check the address is within the memory space
+        let mem_start = mem_space_get_addr();
+        let mem_size = mem_space_get_size();
+        if ptr.wrapping_sub(std::mem::size_of::<MemMetaBlock>()) < mem_start || ptr.wrapping_add(std::mem::size_of::<MemMetaBlock>()) >= unsafe { mem_start.add(mem_size) } {
+            return;
+        }
 
         // Calculate the address of the metadata block
         let meta_block_ptr = unsafe { (ptr as *mut u8).sub(std::mem::size_of::<MemMetaBlock>()) as *mut MemMetaBlock };
