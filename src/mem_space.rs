@@ -4,7 +4,7 @@
 // Cursus : Université Grenoble Alpes - UFRIM²AG - Master 1 - Informatique
 //------------------------------------------------------------------------------
 
-pub const MEMORY_SIZE: usize = 4096; // You can change the memory size here.
+pub const MEMORY_SIZE: usize = 128000; // You can change the memory size here.
 
 static mut MEMORY: [u8; MEMORY_SIZE] = [0; MEMORY_SIZE];
 

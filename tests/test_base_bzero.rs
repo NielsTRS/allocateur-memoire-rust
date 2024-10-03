@@ -23,6 +23,7 @@ fn make_test() -> usize {
             ALLOCS[i as usize] = MemMetaBlock::mem_alloc(i as usize);
             !ALLOCS[i as usize].is_null()
         } {
+            ptr::write_bytes(ALLOCS[i as usize], 0, i as usize);
             i += 1;
         }
         i -= 1;
@@ -43,7 +44,7 @@ fn make_test() -> usize {
 }
 
 #[test]
-fn test_base() {
+fn test_base_zero() {
     MemFreeBlock::mem_init();
     eprintln!(
         "Test réalisant des series d'allocations / désallocations en ordre LIFO\n\

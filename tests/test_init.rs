@@ -38,7 +38,7 @@ fn alloc_max(mut estimate: usize) -> *mut u8 {
 }
 
 #[test]
-fn run() {
+fn test_init() {
     eprintln!(
         "Test réalisant de multiples fois une initialisation \
         suivie d'une alloc max.\nDéfinir DEBUG à la compilation pour avoir \

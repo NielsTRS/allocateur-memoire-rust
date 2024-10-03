@@ -189,7 +189,7 @@ impl MemFreeBlock {
     }
 
     // First Fit Strategy
-    fn mem_first_fit(first_block: *mut MemFreeBlock, size: usize) -> Option<*mut MemFreeBlock> {
+    pub fn mem_first_fit(first_block: *mut MemFreeBlock, size: usize) -> Option<*mut MemFreeBlock> {
         let mut current_block = first_block;
         // Iterate over free blocks and find the first suitable block
         while !current_block.is_null() {
