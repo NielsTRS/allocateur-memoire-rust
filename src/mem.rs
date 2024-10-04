@@ -76,7 +76,6 @@ impl MemFreeBlock {
 
     // Show the free and occupied memory blocks
     pub fn mem_show(print: fn(usize, usize, bool)) {
-        Self::print_free_list();
 
         let mem_ptr = mem_space_get_addr();
     
@@ -159,9 +158,14 @@ impl MemFreeBlock {
             if let Some(first_block) = MemFreeBlock::get_first_block() {
                 if first_block == block_to_delete {
                     // If the block to delete is the first block, update the head of the list
-                    MemFreeBlock::set_first_block(
-                        (*block_to_delete).next.unwrap_or(ptr::null_mut()),
-                    );
+                    if(*block_to_delete).next.is_none(){
+                        FREE_LIST_HEAD = None;
+                    }
+                    else{
+                        MemFreeBlock::set_first_block(
+                            (*block_to_delete).next.unwrap_or(ptr::null_mut()),
+                        );
+                    }
                     return;
                 }
                 // Traverse the list to find the block and remove it
@@ -315,22 +319,6 @@ impl MemFreeBlock {
         }
     }
 
-    pub fn print_free_list() {
-        let mem_ptr = mem_space_get_addr();
-        let mut current = Self::get_first_block();
-        println!("Free List:");
-        while let Some(current_block) = current {
-            unsafe {
-                println!(
-                    "Adresse: {:?}, Taille: {}",
-                    (current_block as *mut u8).offset_from(mem_ptr) as usize,
-                    (*current_block).get_size()
-                );
-                current = (*current_block).next;
-            }
-        }
-        println!("\n");
-    }
 }
 
 impl MemMetaBlock {
