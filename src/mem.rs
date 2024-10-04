@@ -95,7 +95,7 @@ impl MemFreeBlock {
                 // If the current block is a free block
                 if ptr_current == free_block_ptr as *mut u8 {
                     unsafe {
-                        print(ptr_current.offset_from(mem_ptr) as usize, (*free_block_ptr).get_size(), true);
+                        print(ptr_current.offset_from(mem_ptr) as usize, (*free_block_ptr).get_size() - std::mem::size_of::<MemMetaBlock>(), true);
                         // Move the current pointer forward by the size of the free block (get the next block address)
                         ptr_current = ptr_current.add((*free_block_ptr).get_size());
                         // Move to the next free block in the list
