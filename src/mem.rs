@@ -89,9 +89,6 @@ impl MemFreeBlock {
     
         // Get the first free block
         let mut free_block = MemFreeBlock::get_first_block();
-
-        println!("Size of MemFreeBlock: {}", std::mem::size_of::<MemFreeBlock>());
-        println!("Size of MemMetaBlock: {}", std::mem::size_of::<MemMetaBlock>());
     
         // Iterate through the entire memory space
         while ptr_current < end_memory {
