@@ -28,7 +28,10 @@ fn alloc_max(mut estimate: usize) -> *mut u8 {
 
         // Idempotence test
         if LAST != 0 {
-            assert_eq!(estimate, LAST, "Idempotence test failed: sizes do not match.");
+            assert_eq!(
+                estimate, LAST,
+                "Idempotence test failed: sizes do not match."
+            );
         } else {
             LAST = estimate; // Set the initial allocation size
         }

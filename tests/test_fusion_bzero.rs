@@ -4,9 +4,9 @@
 // Cursus : Université Grenoble Alpes - UFRIM²AG - Master 1 - Informatique
 //------------------------------------------------------------------------------
 
-use std::ptr;
 use lib::mem::*;
-use lib::mem_space::{mem_space_get_size, mem_space_get_addr};
+use lib::mem_space::{mem_space_get_addr, mem_space_get_size};
+use std::ptr;
 
 const MAX_ALLOC: usize = 1 << 10;
 const NB_TESTS: usize = 5;

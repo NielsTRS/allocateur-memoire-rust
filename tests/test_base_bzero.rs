@@ -4,9 +4,9 @@
 // Cursus : Université Grenoble Alpes - UFRIM²AG - Master 1 - Informatique
 //------------------------------------------------------------------------------
 
-use std::ptr;
-use std::assert;
 use lib::mem::*;
+use std::assert;
+use std::ptr;
 
 const MAX_ALLOC: usize = 1 << 10;
 const NB_TESTS: usize = 10;

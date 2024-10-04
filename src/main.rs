@@ -7,10 +7,10 @@
 pub mod mem;
 pub mod mem_space;
 
-use std::io::{self, Write};
-use std::ptr;
-use std::process::exit;
 use std::assert;
+use std::io::{self, Write};
+use std::process::exit;
+use std::ptr;
 
 use mem::*;
 use mem_space::*;
@@ -25,7 +25,9 @@ fn aide() {
     eprintln!("f n       :   liberer le bloc alloue lors de la n-ieme allocation");
     eprintln!("i         :   afficher la liste des emplacements memoire inoccupes");
     eprintln!("o         :   afficher la liste des emplacements memoire occupees");
-    eprintln!("M         :   afficher la liste de tous les emplacements memoire (libres et occupes)");
+    eprintln!(
+        "M         :   afficher la liste de tous les emplacements memoire (libres et occupes)"
+    );
     eprintln!("m         :   afficher le dump de la memoire");
     eprintln!("h         :   afficher cette aide");
     eprintln!("q         :   quitter ce programme\n");

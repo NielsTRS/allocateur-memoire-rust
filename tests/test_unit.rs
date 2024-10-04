@@ -22,5 +22,5 @@ fn modulo_9() {
 #[test]
 fn modulo_rand() {
     let addr = get_modulo(rand::thread_rng().gen_range(1..100));
-    assert_eq!(addr % MODULO , 0);
+    assert_eq!(addr % MODULO, 0);
 }

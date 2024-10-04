@@ -4,11 +4,11 @@
 // Cursus : Université Grenoble Alpes - UFRIM²AG - Master 1 - Informatique
 //------------------------------------------------------------------------------
 
-use std::ptr;
-use std::env;
-use rand::Rng;
 use lib::mem::*;
-use lib::mem_space::{mem_space_get_size, mem_space_get_addr};
+use lib::mem_space::{mem_space_get_addr, mem_space_get_size};
+use rand::Rng;
+use std::env;
+use std::ptr;
 
 const MAX_ALLOC: usize = 100000;
 const MAX_BLOC: usize = 200;
@@ -67,7 +67,8 @@ fn test_frag() {
                 free = rng.gen_range(0..=i);
                 println!("Libération {}", free);
                 assert!(
-                    ALLOCS[free] < (mem_space_get_addr() as *mut u8).add(mem_space_get_size()) as *mut u8
+                    ALLOCS[free]
+                        < (mem_space_get_addr() as *mut u8).add(mem_space_get_size()) as *mut u8
                 );
                 MemMetaBlock::mem_free(ALLOCS[free]);
                 ALLOCS[free] = ptr::null_mut();
@@ -84,9 +85,7 @@ fn test_frag() {
                 size, i
             );
         } else {
-            println!(
-                "Le tableau d'allocation est trop petit, augmentez MAX_ALLOC ou MAX_BLOC\n"
-            );
+            println!("Le tableau d'allocation est trop petit, augmentez MAX_ALLOC ou MAX_BLOC\n");
         }
     }
 }
