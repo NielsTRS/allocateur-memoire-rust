@@ -3,11 +3,9 @@ use std::ptr;
 
 // Global static variables
 type FitHandler = fn(*mut MemFreeBlock, usize) -> Option<*mut MemFreeBlock>;
-static mut FIT_HANDLER: Option<FitHandler> = None;
 pub static MODULO: usize = 8;
 
-static mut FREE_LIST_HEAD: Option<*mut MemFreeBlock> = None;
-
+// Metadata block for allocated memory
 pub struct MemMetaBlock {
     pub size: usize,
 }
@@ -16,6 +14,12 @@ pub struct MemMetaBlock {
 pub struct MemFreeBlock {
     pub size: usize,
     pub next: Option<*mut MemFreeBlock>,
+}
+
+// Memory header block
+pub struct MemHeaderBlock {
+    pub free_list_head: Option<*mut MemFreeBlock>,
+    pub fit_handler: Option<FitHandler>,
 }
 
 // Get the next modulo 8 size
@@ -27,22 +31,33 @@ pub fn get_modulo(size: usize) -> usize {
     }
 }
 
+// Get the memory header
+fn get_memory_header() -> &'static mut MemHeaderBlock {
+    unsafe { &mut *(mem_space_get_addr() as *mut MemHeaderBlock) }
+}
+
 impl MemFreeBlock {
     // Get the list head
     pub fn get_first_block() -> Option<*mut MemFreeBlock> {
-        unsafe { FREE_LIST_HEAD }
-    }
-    // Set the head of the list
-    pub fn set_first_block(block: *mut MemFreeBlock) {
-        unsafe {
-            FREE_LIST_HEAD = Some(block);
-        }
+        get_memory_header().free_list_head
     }
 
+    // Set the head of the list
+    pub fn set_first_block(block: *mut MemFreeBlock) {
+        get_memory_header().free_list_head = Some(block);
+    }
+
+    // Set the fit handler
+    pub fn mem_set_fit_handler(handler: FitHandler) {
+        get_memory_header().fit_handler = Some(handler);
+    }
+
+    // Initialize the memory space
     pub fn mem_init() {
         // Get the starting address and size of the memory space
-        let mem_start = mem_space_get_addr();
-        let mem_size = mem_space_get_size();
+        let mem_start =
+            (mem_space_get_addr() as usize + std::mem::size_of::<MemHeaderBlock>()) as *mut u8;
+        let mem_size = mem_space_get_size() - std::mem::size_of::<MemHeaderBlock>();
 
         // Calculate the size of the first free block
         let first_free_block_size = mem_size;
@@ -76,11 +91,11 @@ impl MemFreeBlock {
 
     // Show the free and occupied memory blocks
     pub fn mem_show(print: fn(usize, usize, bool)) {
-        let mem_ptr = mem_space_get_addr();
-
         // Get the starting address and size of the memory space
-        let mem_start = mem_space_get_addr();
-        let mem_size = mem_space_get_size();
+        let mem_start =
+            (mem_space_get_addr() as usize + std::mem::size_of::<MemHeaderBlock>()) as *mut u8;
+        let mem_ptr = mem_space_get_addr();
+        let mem_size = mem_space_get_size() - std::mem::size_of::<MemHeaderBlock>();
 
         let mut ptr_current = mem_start; // Pointer to the current memory block, starting after the free list
         let end_memory = unsafe { mem_ptr.add(mem_size) }; // End of the memory space address
@@ -172,7 +187,7 @@ impl MemFreeBlock {
                 if first_block == block_to_delete {
                     // If the block to delete is the first block, update the head of the list
                     if (*block_to_delete).next.is_none() {
-                        FREE_LIST_HEAD = None;
+                        get_memory_header().free_list_head = None;
                     } else {
                         MemFreeBlock::set_first_block(
                             (*block_to_delete).next.unwrap_or(ptr::null_mut()),
@@ -191,13 +206,6 @@ impl MemFreeBlock {
                     current_block = next_block;
                 }
             }
-        }
-    }
-
-    // Set the memory fit handler strategy
-    pub fn mem_set_fit_handler(handler: FitHandler) {
-        unsafe {
-            FIT_HANDLER = Some(handler);
         }
     }
 
@@ -356,7 +364,7 @@ impl MemMetaBlock {
         }
 
         // Check if there is a fit handler set
-        if let Some(handler) = unsafe { FIT_HANDLER } {
+        if let Some(handler) = get_memory_header().fit_handler {
             // Get the first free block
             if let Some(first_free_block) = MemFreeBlock::get_first_block() {
                 let total_alloc_size = size + std::mem::size_of::<MemMetaBlock>();
@@ -413,8 +421,9 @@ impl MemMetaBlock {
         }
 
         // Check the address is within the memory space
-        let mem_start = mem_space_get_addr();
-        let mem_size = mem_space_get_size();
+        let mem_start =
+            (mem_space_get_addr() as usize + std::mem::size_of::<MemHeaderBlock>()) as *mut u8;
+        let mem_size = mem_space_get_size() - std::mem::size_of::<MemHeaderBlock>();
         if ptr.wrapping_sub(std::mem::size_of::<MemMetaBlock>()) < mem_start
             || ptr.wrapping_add(std::mem::size_of::<MemMetaBlock>())
                 >= unsafe { mem_start.add(mem_size) }
