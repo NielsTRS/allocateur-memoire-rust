@@ -72,8 +72,18 @@ fn main() {
 
         match commande {
             'a' => {
-                let taille: usize = chars.as_str().trim().parse().unwrap();
-                let ptr = MemMetaBlock::mem_alloc(taille);
+                let taille: isize = match chars.as_str().trim().parse() {
+                    Ok(t) => t,
+                    Err(_) => {
+                        println!("Erreur : taille invalide");
+                        continue;
+                    }
+                };
+                if taille < 0 {
+                    println!("Erreur : la taille ne peut pas être négative");
+                    continue;
+                }
+                let ptr = MemMetaBlock::mem_alloc(taille as usize);
                 allocations[nb_alloc] = ptr;
                 nb_alloc += 1;
                 if ptr.is_null() {
