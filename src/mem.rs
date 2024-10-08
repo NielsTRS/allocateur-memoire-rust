@@ -452,6 +452,65 @@ impl MemMetaBlock {
         MemFreeBlock::fusion();
     }
 
+    // Reallocate memory
+    pub fn mem_realloc(ptr: *mut u8, size: usize) -> *mut u8 {
+        let size = get_modulo(size);
+
+        if ptr.is_null() {
+            return MemMetaBlock::mem_alloc(size);
+        }
+
+        let meta_old_block_ptr = unsafe {
+            (ptr as *mut u8).sub(std::mem::size_of::<MemMetaBlock>()) as *mut MemMetaBlock
+        };
+        let old_block_size = unsafe { (*meta_old_block_ptr).get_size() };
+        let old_data_size = old_block_size - std::mem::size_of::<MemMetaBlock>();
+
+        // Realloc to a smaller size
+        if size <= old_data_size {
+            let remaining_size = old_data_size - size;
+            // If the new size is smaller or equal to the old size, we can reuse the same block
+            if remaining_size >= std::mem::size_of::<MemFreeBlock>() {
+                unsafe {
+                    (*meta_old_block_ptr).set_size(size + std::mem::size_of::<MemMetaBlock>());
+
+                    // Create a new free block with the remaining size
+                    let remaining_block = ptr.add(size) as *mut MemFreeBlock;
+
+                    // Ensure the remaining size is at least the size of MemFreeBlock
+                    (*remaining_block).set_size(remaining_size);
+
+                    // Insert the new free block into the free list
+                    MemFreeBlock::insert(remaining_block);
+
+                    // Coalesce adjacent free blocks
+                    MemFreeBlock::fusion();
+                }
+            } else {
+                // If the remaining size is too small, just return the old pointer
+                println!("Realloc: Not enough space to reallocate");
+            }
+            return ptr;
+        }
+
+        // Realloc to a larger size
+
+        // Allocate a new block of the desired size
+        let new_block = MemMetaBlock::mem_alloc(size); // Pointer to the start of the new block (after metadata)
+
+        if !new_block.is_null() {
+            // Copy the contents from the old block to the new block
+            let copy_size = std::cmp::min(old_data_size, size);
+            unsafe {
+                ptr::copy_nonoverlapping(ptr, new_block, copy_size);
+            }
+
+            // Free the old block
+            MemMetaBlock::mem_free(ptr);
+        }
+        new_block
+    }
+
     // Get the size of the block
     pub fn get_size(&self) -> usize {
         self.size

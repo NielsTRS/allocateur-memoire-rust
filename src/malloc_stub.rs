@@ -104,37 +104,17 @@ pub extern "C" fn realloc(ptr: *mut c_void, size: usize) -> *mut c_void {
     init();
 
     // Debug print
-    dprintf!("Reallocation de la zone en {:p}", ptr);
+    dprintf!("Allocation de {} octets...", size);
 
-    if ptr.is_null() {
-        dprintf!(" Realloc of NULL pointer");
-        return MemMetaBlock::mem_alloc(size) as *mut c_void;
-    }
+    // Forward to our custom allocator
+    let result = MemMetaBlock::mem_realloc(ptr as *mut u8, size);
 
-    // Get the current size of the allocated block
-    let current_size = unsafe { (*(ptr as *mut MemMetaBlock)).get_size() };
-
-    // If the current size is sufficient, return the same pointer
-    if current_size >= size {
-        dprintf!(" Useless realloc");
-        return ptr;
-    }
-
-    // Allocate a new block
-    let result = MemMetaBlock::mem_alloc(size);
+    // Debug print on failure or success
     if result.is_null() {
-        dprintf!(" Realloc FAILED");
-        return ptr::null_mut();
+        dprintf!(" Realloc FAILED !!");
+    } else {
+        dprintf!(" {:p}", result);
     }
-
-    // Calculate the size to copy and perform the copy
-    let copy_size = min(size, current_size);
-    unsafe { copy_nonoverlapping(ptr as *const u8, result as *mut u8, copy_size) };
-
-    // Free the old block
-    MemMetaBlock::mem_free(ptr as *mut u8);
-
-    dprintf!(" Realloc ok");
 
     result as *mut c_void
 }

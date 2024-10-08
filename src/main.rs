@@ -21,6 +21,7 @@ fn aide() {
     eprintln!("Aide :");
     eprintln!("Saisir l'une des commandes suivantes\n");
     eprintln!("a taille  :   allouer un bloc de la taille souhaitee");
+    eprintln!("r n       :   reallouer le bloc alloue lors de la n-ieme allocation");
     eprintln!("l adresse :   liberer un bloc alloue precedemment a adresse");
     eprintln!("f n       :   liberer le bloc alloue lors de la n-ieme allocation");
     eprintln!("i         :   afficher la liste des emplacements memoire inoccupes");
@@ -106,6 +107,36 @@ fn main() {
                 MemMetaBlock::mem_free(allocations[offset - 1]);
                 allocations[offset - 1] = ptr::null_mut();
                 println!("Memoire liberee");
+            }
+            'r' => {
+                // get offset and size
+                let input: Vec<&str> = chars.as_str().trim().split_whitespace().collect();
+                if input.len() != 2 {
+                    println!("Erreur : commande invalide");
+                    continue;
+                }
+                let offset: usize = match input[0].parse() {
+                    Ok(o) => o,
+                    Err(_) => {
+                        println!("Erreur : offset invalide");
+                        continue;
+                    }
+                };
+                let taille: isize = match input[1].parse() {
+                    Ok(t) => t,
+                    Err(_) => {
+                        println!("Erreur : taille invalide");
+                        continue;
+                    }
+                };
+                if taille < 0 {
+                    println!("Erreur : la taille ne peut pas être négative");
+                    continue;
+                }
+                assert!(offset < MAX_ALLOCATIONS);
+                let ptr = MemMetaBlock::mem_realloc(allocations[offset - 1], taille as usize);
+                allocations[offset - 1] = ptr;
+                println!("Memoire reallouee");
             }
             'i' => {
                 MemFreeBlock::mem_show(afficher_zone_libre);
