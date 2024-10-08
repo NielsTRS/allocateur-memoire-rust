@@ -4,18 +4,12 @@
 // Cursus : Université Grenoble Alpes - UFRIM²AG - Master 1 - Informatique
 //------------------------------------------------------------------------------
 
-
-
-use std::alloc::{GlobalAlloc, Layout};
-use std::ptr;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Once;
 use std::ffi::c_void;
-use std::mem::MaybeUninit;
+use std::ptr;
 use std::ptr::copy_nonoverlapping;
+use std::sync::Once;
 
-use mem::*;
-use mem_space::*;
+use crate::mem::*;
 
 // For thread-local reentrancy prevention
 thread_local! {
@@ -37,7 +31,11 @@ macro_rules! dprintf {
 
 // Helper to get the minimum of two values
 fn min(a: usize, b: usize) -> usize {
-    if a < b { a } else { b }
+    if a < b {
+        a
+    } else {
+        b
+    }
 }
 
 // Ensure the allocator is initialized only once
@@ -46,7 +44,7 @@ static INIT: Once = Once::new();
 // Initialization function for the allocator
 fn init() {
     INIT.call_once(|| {
-        mem_init();
+        MemFreeBlock::mem_init();
     });
 }
 
@@ -60,7 +58,7 @@ pub extern "C" fn malloc(size: usize) -> *mut c_void {
     dprintf!("Allocation de {} octets...", size);
 
     // Forward to our custom allocator
-    let result = mem_alloc(size);
+    let result = MemMetaBlock::mem_alloc(size);
 
     // Debug print on failure or success
     if result.is_null() {
@@ -69,7 +67,7 @@ pub extern "C" fn malloc(size: usize) -> *mut c_void {
         dprintf!(" {:p}", result);
     }
 
-    result
+    result as *mut c_void
 }
 
 // Overriding calloc
@@ -84,7 +82,7 @@ pub extern "C" fn calloc(count: usize, size: usize) -> *mut c_void {
     dprintf!("Allocation de {} octets", total_size);
 
     // Forward to our custom allocator
-    let ptr = mem_alloc(total_size);
+    let ptr = MemMetaBlock::mem_alloc(total_size);
 
     // Debug print on failure
     if ptr.is_null() {
@@ -96,7 +94,7 @@ pub extern "C" fn calloc(count: usize, size: usize) -> *mut c_void {
         unsafe { ptr::write_bytes(ptr, 0, total_size) };
     }
 
-    ptr
+    ptr as *mut c_void
 }
 
 // Overriding realloc
@@ -110,11 +108,11 @@ pub extern "C" fn realloc(ptr: *mut c_void, size: usize) -> *mut c_void {
 
     if ptr.is_null() {
         dprintf!(" Realloc of NULL pointer");
-        return mem_alloc(size);
+        return MemMetaBlock::mem_alloc(size) as *mut c_void;
     }
 
     // Get the current size of the allocated block
-    let current_size = mem_get_size(ptr);
+    let current_size = unsafe { (*(ptr as *mut MemMetaBlock)).get_size() };
 
     // If the current size is sufficient, return the same pointer
     if current_size >= size {
@@ -123,7 +121,7 @@ pub extern "C" fn realloc(ptr: *mut c_void, size: usize) -> *mut c_void {
     }
 
     // Allocate a new block
-    let result = mem_alloc(size);
+    let result = MemMetaBlock::mem_alloc(size);
     if result.is_null() {
         dprintf!(" Realloc FAILED");
         return ptr::null_mut();
@@ -134,11 +132,11 @@ pub extern "C" fn realloc(ptr: *mut c_void, size: usize) -> *mut c_void {
     unsafe { copy_nonoverlapping(ptr as *const u8, result as *mut u8, copy_size) };
 
     // Free the old block
-    mem_free(ptr);
+    MemMetaBlock::mem_free(ptr as *mut u8);
 
     dprintf!(" Realloc ok");
 
-    result
+    result as *mut c_void
 }
 
 // Overriding free
@@ -150,27 +148,8 @@ pub extern "C" fn free(ptr: *mut c_void) {
     // Handle the case where the pointer is NULL
     if !ptr.is_null() {
         dprintf!("Liberation de la zone en {:p}", ptr);
-        mem_free(ptr);
+        MemMetaBlock::mem_free(ptr as *mut u8);
     } else {
         dprintf!("Liberation de la zone NULL");
     }
-}
-
-// Dummy implementations for memory allocation functions to be replaced with actual logic
-fn mem_init() {
-    // Custom memory allocator initialization logic here
-}
-
-fn mem_alloc(size: usize) -> *mut c_void {
-    // Replace this with your custom memory allocation logic
-    ptr::null_mut()
-}
-
-fn mem_get_size(ptr: *mut c_void) -> usize {
-    // Replace this with the logic to get the size of the allocated block
-    0
-}
-
-fn mem_free(ptr: *mut c_void) {
-    // Replace this with your custom memory free logic
 }
