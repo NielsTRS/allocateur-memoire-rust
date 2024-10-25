@@ -33,3 +33,11 @@ Once the code is build using cargo, we can run gdb :
 ```bash
 $ gdb ./target/debug/allocateur
 ```
+
+## Overwrite libc : malloc, calloc, free, etc...
+```bash
+$ export LD_LIBRARY_PATH=./target/release:$LD_LIBRARY_PATH
+```
+```bash
+$ gcc main.c -L./target/release -llib -o main
+```
