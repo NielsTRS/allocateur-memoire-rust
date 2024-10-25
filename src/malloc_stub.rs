@@ -6,7 +6,6 @@
 
 use std::ffi::c_void;
 use std::ptr;
-use std::ptr::copy_nonoverlapping;
 use std::sync::Once;
 
 use crate::mem::*;
@@ -27,15 +26,6 @@ macro_rules! dprintf {
             }
         });
     };
-}
-
-// Helper to get the minimum of two values
-fn min(a: usize, b: usize) -> usize {
-    if a < b {
-        a
-    } else {
-        b
-    }
 }
 
 // Ensure the allocator is initialized only once
